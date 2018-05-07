@@ -39,6 +39,7 @@ import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginCategory;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.util.QueryRunner;
@@ -47,7 +48,8 @@ import net.runelite.client.util.QueryRunner;
  * @author robin
  */
 @PluginDescriptor(
-	name = "Implings"
+	name = "Implings",
+	category = PluginCategory.UTILITY
 )
 public class ImplingsPlugin extends Plugin
 {

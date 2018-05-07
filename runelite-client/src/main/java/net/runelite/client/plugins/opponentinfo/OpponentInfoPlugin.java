@@ -32,11 +32,13 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginCategory;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.Overlay;
 
 @PluginDescriptor(
-	name = "Opponent Information"
+	name = "Opponent Information",
+	category = PluginCategory.UTILITY
 )
 public class OpponentInfoPlugin extends Plugin
 {
