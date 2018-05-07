@@ -315,16 +315,15 @@ public class ConfigPanel extends PluginPanel
 		removeAll();
 		add(new JLabel("Plugin Configuration", SwingConstants.CENTER));
 		add(searchBar);
-		for (PluginCategory c: PluginCategory.values())
+
+		JComboBox<PluginCategory> categoryComboBox = new JComboBox<>(PluginCategory.values());
+		categoryComboBox.setSelectedItem(currentCategory);
+		categoryComboBox.addActionListener(e ->
 		{
-			JButton button = new JButton(c.toString());
-			button.addActionListener(rebuild ->
-			{
-				currentCategory = c;
-				rebuildPluginList();
-			});
-			add(button);
-		}
+			currentCategory = (PluginCategory) categoryComboBox.getSelectedItem();
+			rebuildPluginList();
+		});
+		add(categoryComboBox);
 
 		onSearchBarChanged();
 		searchBar.requestFocusInWindow();
