@@ -38,7 +38,7 @@ import net.runelite.client.ui.overlay.Overlay;
 
 @PluginDescriptor(
 	name = "Opponent Information",
-	category = PluginCategory.UTILITY
+	category = PluginCategory.COMBAT
 )
 public class OpponentInfoPlugin extends Plugin
 {
