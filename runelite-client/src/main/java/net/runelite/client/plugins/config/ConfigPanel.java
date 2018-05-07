@@ -158,8 +158,8 @@ public class ConfigPanel extends PluginPanel
 				.sorted(Comparator.comparing(left -> left.getClass().getAnnotation(PluginDescriptor.class).name()))
 				.forEach(plugin ->
 				{
-					final PluginCategory pluginCategory = plugin.getClass()
-							.getAnnotation(PluginDescriptor.class).category();
+					final PluginDescriptor pluginDescriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
+					final PluginCategory pluginCategory = pluginDescriptor.category();
 
 					if (currentCategory != PluginCategory.ALL && currentCategory != pluginCategory)
 					{
@@ -167,7 +167,7 @@ public class ConfigPanel extends PluginPanel
 					}
 
 					final Config pluginConfigProxy = pluginManager.getPluginConfigProxy(plugin);
-					final String pluginName = plugin.getClass().getAnnotation(PluginDescriptor.class).name();
+					final String pluginName = pluginDescriptor.name();
 
 					final JPanel groupPanel = buildGroupPanel();
 					groupPanel.add(new JLabel(pluginName), BorderLayout.CENTER);
