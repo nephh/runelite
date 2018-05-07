@@ -72,6 +72,7 @@ import net.runelite.client.config.ConfigItemDescriptor;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.RuneLiteConfig;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginCategory;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
@@ -110,6 +111,7 @@ public class ConfigPanel extends PluginPanel
 	private final JTextField searchBar = new JTextField();
 	private Map<String, JPanel> children = new TreeMap<>();
 	private int scrollBarPosition = 0;
+	private PluginCategory currentCategory = PluginCategory.ALL;
 
 	public ConfigPanel(PluginManager pluginManager, ConfigManager configManager, ScheduledExecutorService executorService, RuneLiteConfig runeLiteConfig)
 	{
@@ -149,11 +151,21 @@ public class ConfigPanel extends PluginPanel
 		scrollBarPosition = getScrollPane().getVerticalScrollBar().getValue();
 		Map<String, JPanel> newChildren = new TreeMap<>();
 
+		children.clear();
+
 		pluginManager.getPlugins().stream()
 				.filter(plugin -> !plugin.getClass().getAnnotation(PluginDescriptor.class).hidden())
 				.sorted(Comparator.comparing(left -> left.getClass().getAnnotation(PluginDescriptor.class).name()))
 				.forEach(plugin ->
 				{
+					final PluginCategory pluginCategory = plugin.getClass()
+							.getAnnotation(PluginDescriptor.class).category();
+
+					if (currentCategory != PluginCategory.ALL && currentCategory != pluginCategory)
+					{
+						return;
+					}
+
 					final Config pluginConfigProxy = pluginManager.getPluginConfigProxy(plugin);
 					final String pluginName = plugin.getClass().getAnnotation(PluginDescriptor.class).name();
 
@@ -303,6 +315,16 @@ public class ConfigPanel extends PluginPanel
 		removeAll();
 		add(new JLabel("Plugin Configuration", SwingConstants.CENTER));
 		add(searchBar);
+		for (PluginCategory c: PluginCategory.values())
+		{
+			JButton button = new JButton(c.toString());
+			button.addActionListener(rebuild ->
+			{
+				currentCategory = c;
+				rebuildPluginList();
+			});
+			add(button);
+		}
 
 		onSearchBarChanged();
 		searchBar.requestFocusInWindow();
