@@ -185,20 +185,22 @@ public class ConfigPanel extends PluginPanel
 					newChildren.put(pluginName, groupPanel);
 				});
 
+		if (currentCategory == PluginCategory.ALL || currentCategory == PluginCategory.CLIENT)
+		{
+			final JPanel groupPanel = buildGroupPanel();
+			groupPanel.add(new JLabel("RuneLite"), BorderLayout.CENTER);
 
-		final JPanel groupPanel = buildGroupPanel();
-		groupPanel.add(new JLabel("RuneLite"), BorderLayout.CENTER);
+			final JPanel buttonPanel = new JPanel();
+			buttonPanel.setLayout(new GridLayout(1, 2, 3, 0));
+			groupPanel.add(buttonPanel, BorderLayout.LINE_END);
 
-		final JPanel buttonPanel = new JPanel();
-		buttonPanel.setLayout(new GridLayout(1, 2, 3, 0));
-		groupPanel.add(buttonPanel, BorderLayout.LINE_END);
+			final JButton editConfigButton = buildConfigButton(runeLiteConfig);
+			buttonPanel.add(editConfigButton);
 
-		final JButton editConfigButton = buildConfigButton(runeLiteConfig);
-		buttonPanel.add(editConfigButton);
-
-		final JButton toggleButton = buildToggleButton(null);
-		buttonPanel.add(toggleButton);
-		newChildren.put("RuneLite", groupPanel);
+			final JButton toggleButton = buildToggleButton(null);
+			buttonPanel.add(toggleButton);
+			newChildren.put("RuneLite", groupPanel);
+		}
 
 		children = newChildren;
 		openConfigList();
