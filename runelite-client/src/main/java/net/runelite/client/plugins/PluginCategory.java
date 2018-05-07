@@ -4,9 +4,9 @@ public enum PluginCategory
 {
 	ALL("All"),
 	COMBAT("Combat"),
-	SKILLING("Skilling"),
+	SKILLS("Skills"),
 	UTILITY("Utility"),
-	OTHER("Other");
+	CLIENT("Client");
 
 	private final String category;
 
