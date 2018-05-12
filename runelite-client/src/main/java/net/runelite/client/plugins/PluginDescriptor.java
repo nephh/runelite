@@ -37,7 +37,7 @@ public @interface PluginDescriptor
 {
 	String name();
 
-	PluginCategory category() default PluginCategory.ALL;
+	PluginCategory category();
 
 	boolean enabledByDefault() default true;
 
