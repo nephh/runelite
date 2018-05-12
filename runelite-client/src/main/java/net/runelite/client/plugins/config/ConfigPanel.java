@@ -39,7 +39,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -76,6 +78,7 @@ import net.runelite.client.plugins.PluginCategory;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 
 @Slf4j
@@ -110,8 +113,9 @@ public class ConfigPanel extends PluginPanel
 	private final RuneLiteConfig runeLiteConfig;
 	private final JTextField searchBar = new JTextField();
 	private Map<String, JPanel> children = new TreeMap<>();
+	private Map<PluginCategory, List<JPanel>> pluginMap = new TreeMap<>();
+	private Map<PluginCategory, JLabel> categoryLabels = new TreeMap<>();
 	private int scrollBarPosition = 0;
-	private PluginCategory currentCategory = PluginCategory.ALL;
 
 	public ConfigPanel(PluginManager pluginManager, ConfigManager configManager, ScheduledExecutorService executorService, RuneLiteConfig runeLiteConfig)
 	{
@@ -151,7 +155,8 @@ public class ConfigPanel extends PluginPanel
 		scrollBarPosition = getScrollPane().getVerticalScrollBar().getValue();
 		Map<String, JPanel> newChildren = new TreeMap<>();
 
-		children.clear();
+		pluginMap = initPluginMap();
+		categoryLabels = initCategoryLabels();
 
 		pluginManager.getPlugins().stream()
 				.filter(plugin -> !plugin.getClass().getAnnotation(PluginDescriptor.class).hidden())
@@ -160,11 +165,6 @@ public class ConfigPanel extends PluginPanel
 				{
 					final PluginDescriptor pluginDescriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
 					final PluginCategory pluginCategory = pluginDescriptor.category();
-
-					if (currentCategory != PluginCategory.ALL && currentCategory != pluginCategory)
-					{
-						return;
-					}
 
 					final Config pluginConfigProxy = pluginManager.getPluginConfigProxy(plugin);
 					final String pluginName = pluginDescriptor.name();
@@ -183,27 +183,52 @@ public class ConfigPanel extends PluginPanel
 					buttonPanel.add(toggleButton);
 
 					newChildren.put(pluginName, groupPanel);
+					pluginMap.get(pluginCategory).add(groupPanel);
 				});
 
-		if (currentCategory == PluginCategory.ALL || currentCategory == PluginCategory.CLIENT)
-		{
-			final JPanel groupPanel = buildGroupPanel();
-			groupPanel.add(new JLabel("RuneLite"), BorderLayout.CENTER);
+		final JPanel groupPanel = buildGroupPanel();
+		groupPanel.add(new JLabel("RuneLite"), BorderLayout.CENTER);
 
-			final JPanel buttonPanel = new JPanel();
-			buttonPanel.setLayout(new GridLayout(1, 2, 3, 0));
-			groupPanel.add(buttonPanel, BorderLayout.LINE_END);
+		final JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new GridLayout(1, 2, 3, 0));
+		groupPanel.add(buttonPanel, BorderLayout.LINE_END);
 
-			final JButton editConfigButton = buildConfigButton(runeLiteConfig);
-			buttonPanel.add(editConfigButton);
+		final JButton editConfigButton = buildConfigButton(runeLiteConfig);
+		buttonPanel.add(editConfigButton);
 
-			final JButton toggleButton = buildToggleButton(null);
-			buttonPanel.add(toggleButton);
-			newChildren.put("RuneLite", groupPanel);
-		}
+		final JButton toggleButton = buildToggleButton(null);
+		buttonPanel.add(toggleButton);
+		newChildren.put("RuneLite", groupPanel);
+		pluginMap.get(PluginCategory.CLIENT).add(groupPanel);
 
 		children = newChildren;
 		openConfigList();
+	}
+
+	private Map<PluginCategory, List<JPanel>> initPluginMap()
+	{
+		final Map<PluginCategory, List<JPanel>> map = new TreeMap<>();
+
+		for (PluginCategory c: PluginCategory.values())
+		{
+			map.put(c, new ArrayList<>());
+		}
+
+		return map;
+	}
+
+	private Map<PluginCategory, JLabel> initCategoryLabels()
+	{
+		final Map<PluginCategory, JLabel> map = new TreeMap<>();
+
+		for (PluginCategory c: PluginCategory.values())
+		{
+			final JLabel categoryLabel = new JLabel(c.toString(), SwingConstants.CENTER);
+			categoryLabel.setFont(FontManager.getRunescapeBoldFont());
+			map.put(c, categoryLabel);
+		}
+
+		return map;
 	}
 
 	private JPanel buildGroupPanel()
@@ -289,17 +314,48 @@ public class ConfigPanel extends PluginPanel
 	{
 		final String text = searchBar.getText();
 
-		children.values().forEach(this::remove);
+		pluginMap.values().forEach(l -> l.forEach(this::remove));
+		categoryLabels.values().forEach(this::remove);
 
 		if (text.isEmpty())
 		{
-			children.values().forEach(this::add);
+			addPluginsToPanel(pluginMap);
 			revalidate();
 			return;
 		}
 
-		FuzzySearch.findAndProcess(text, children.keySet(), (k) -> add(children.get(k)));
+		Map<PluginCategory, List<JPanel>> plugins = new TreeMap<>();
+
+		FuzzySearch.findAndProcess(text, children.keySet(), (k) ->
+		{
+			final JPanel pluginPanel = children.get(k);
+			final PluginCategory category = getPluginCategory(pluginPanel);
+
+			if (!plugins.keySet().contains(category))
+			{
+				plugins.put(category, new ArrayList<>());
+			}
+
+			plugins.get(category).add(pluginPanel);
+		});
+
+		addPluginsToPanel(plugins);
 		revalidate();
+	}
+
+	private void addPluginsToPanel(Map<PluginCategory, List<JPanel>> plugins)
+	{
+		plugins.keySet().forEach(category ->
+		{
+			add(categoryLabels.get(category));
+			plugins.get(category).forEach(this::add);
+		});
+	}
+
+	private PluginCategory getPluginCategory(JPanel pluginPanel)
+	{
+		return pluginMap.keySet().stream().filter(category ->
+				pluginMap.get(category).contains(pluginPanel)).findFirst().orElse(null);
 	}
 
 	@Override
@@ -317,15 +373,6 @@ public class ConfigPanel extends PluginPanel
 		removeAll();
 		add(new JLabel("Plugin Configuration", SwingConstants.CENTER));
 		add(searchBar);
-
-		JComboBox<PluginCategory> categoryComboBox = new JComboBox<>(PluginCategory.values());
-		categoryComboBox.setSelectedItem(currentCategory);
-		categoryComboBox.addActionListener(e ->
-		{
-			currentCategory = (PluginCategory) categoryComboBox.getSelectedItem();
-			rebuildPluginList();
-		});
-		add(categoryComboBox);
 
 		onSearchBarChanged();
 		searchBar.requestFocusInWindow();
